@@ -1,5 +1,5 @@
 {
-  "name": "rsapt/gui",
+  "name": "@rsapt/gui",
   "version": "0.5.20",
   "author": "RageStudio",
   "description": "An package installer manager.",
@@ -10,35 +10,35 @@
     "build": "node scripts/build.mjs && electron-builder"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=15.0.0"
   },
   "dependencies": {
-    "@foxify/events": "^2.1.0",
-    "antd": "^4.17.4",
-    "axios": "^0.26.1",
+    "@originjs/vite-plugin-commonjs": "^1.0.3",
+    "antd": "4.19.5",
+    "axios": "0.26.1",
     "evite": "0.10.6",
-    "feather-reactjs": "^2.0.13",
-    "less": "^4.1.2",
+    "feather-reactjs": "2.0.13",
+    "less": "4.1.2",
     "make-dir": "^3.1.0",
     "node-7z": "^3.0.0",
     "nprogress": "^0.2.0",
     "p-map": "^5.3.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-router": "^6.3.0",
-    "store": "^2.0.12",
-    "vite-plugin-pages": "0.22.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-router": "6.3.0",
+    "react-router-dom": "6.3.0",
+    "store": "2.0.12",
     "xhr2": "^0.2.1"
   },
   "devDependencies": {
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
-    "@vitejs/plugin-react": "^1.1.3",
-    "electron": "16.0.5",
-    "electron-builder": "^22.14.5",
-    "electron-store": "^8.0.1",
-    "typescript": "^4.5.4",
-    "vite": "^2.7.7"
+    "@vitejs/plugin-react": "1.3.0",
+    "electron": "18.0.3",
+    "electron-builder": "22.14.13",
+    "electron-store": "8.0.1",
+    "typescript": "4.6.3",
+    "vite": "2.9.1"
   },
   "env": {
     "HOST": "127.0.0.1",
