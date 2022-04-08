@@ -1,19 +1,17 @@
 {
   "name": "rsapt",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "private": "true",
+  "workspaces": [
+    "packages/**"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srgooglo/rsapt.git"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@ragestudio/cloudlink": "^0.5.35",
-    "axios": "^0.21.4",
-    "cligui2": "^2.0.5",
-    "clui": "^0.3.6",
-    "corenode": "^0.26.14",
-    "stormdb": "^0.5.2"
-  }
+  "author": "SrGooglo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/srgooglo/rsapt/issues"
+  },
+  "homepage": "https://github.com/srgooglo/rsapt#readme"
 }

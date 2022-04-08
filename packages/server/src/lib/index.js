@@ -1,0 +1,1 @@
+export { default as Schematized } from "./schematized"

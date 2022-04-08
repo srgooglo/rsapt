@@ -3,6 +3,7 @@
 /**/**/origin.server
 /**/**/server.manifest
 /**/**/server.registry
+/**/**/memamio_temp
 
 # Trash
 /**/**/.crash.log
@@ -21,3 +22,4 @@
 # Temporal configurations & static files
 /**/**/.aliaser
 /**/**/*.db
+/packages/server/packages/**/*

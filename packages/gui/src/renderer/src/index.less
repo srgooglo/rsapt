@@ -1,0 +1,238 @@
+@import "./fonts.css";
+
+@bodyBackground: #1a1a1a;
+@appBackground: lighten(@bodyBackground, 10%);
+@selectionBackground: lighten(@bodyBackground, 20%);
+@footerTextColor: lighten(@bodyBackground, 60%);
+
+body,
+html,
+#root {
+	background-color: @bodyBackground;
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+		"Droid Sans", "Helvetica Neue", sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	background-color: @bodyBackground;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	user-select: none !important;
+}
+
+header {
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+
+	-webkit-app-region: drag;
+
+	width: 100%;
+	padding: 10px 20px;
+
+	.nav {
+		padding: 0 20px;
+		display: inline-flex;
+		align-items: center;
+
+		-webkit-app-region: no-drag;
+
+		a {
+			color: @footerTextColor;
+			font-weight: 500;
+			font-family: "DM Mono", monospace;
+		}
+
+		>div {
+			-webkit-app-region: no-drag;
+			margin-right: 20px;
+		}
+	}
+
+	.appControls {
+		position: relative;
+		display: inline-flex;
+		flex-direction: row;
+		align-items: center;
+
+		height: 100%;
+
+		.icon {
+			-webkit-app-region: no-drag;
+
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+
+			height: 100%;
+
+			cursor: pointer;
+			color: rgb(143, 143, 143);
+			margin-right: 8px;
+		}
+
+		.icon:hover {
+			color: #fff;
+		}
+	}
+}
+
+footer {
+	position: fixed;
+
+	bottom: 0;
+	left: 0;
+	right: 0;
+
+	width: 100%;
+	padding: 10px 20px;
+
+	display: inline-flex;
+	color: @footerTextColor;
+
+	a {
+		color: @footerTextColor;
+	}
+
+	>div {
+		margin-right: 20px;
+	}
+
+	span {
+		font-size: 10px;
+	}
+}
+
+code {
+	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+header h1 {
+	margin: 0;
+}
+
+.App {
+	width: 100%;
+	height: 100%;
+	background-color: @appBackground;
+	border-radius: 15px;
+
+	display: flex;
+	flex-direction: column;
+
+	padding: 20px;
+
+	overflow-x: hidden;
+}
+
+.ant-btn {
+	display: flex;
+	align-items: center;
+
+	span {
+		display: flex;
+		align-items: center;
+	}
+}
+
+.ant-input-search-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	svg {
+		margin: 0 !important;
+	}
+}
+
+.ant-popover-buttons {
+	display: flex;
+}
+
+.installer {
+	.actions {
+		display: inline-flex;
+		flex-direction: row;
+		align-items: center;
+
+		>div {
+			margin-right: 20px;
+		}
+	}
+
+	.list {
+		margin: 10px 0;
+
+		.item {
+			justify-content: start;
+
+			transition: all 150ms ease-in-out;
+			letter-spacing: 0.5px;
+
+			.icon {
+				width: 100px;
+				height: 100px;
+
+				margin: 0 20px;
+
+				svg {
+					width: 100%;
+					height: 100%;
+				}
+
+				img {
+					width: 100%;
+					height: 100%;
+				}
+			}
+
+			.info {
+				display: inline-flex;
+				flex-direction: column;
+
+				>div {
+
+					h1,
+					h2,
+					h3,
+					h4,
+					h5,
+					h6,
+					p {
+						margin: 0;
+						line-height: 20px;
+					}
+
+					span {
+						font-size: 10px;
+					}
+
+					margin-bottom: 10px;
+				}
+
+				.details {
+					display: inline-flex;
+					flex-direction: row;
+
+					>div {
+						margin-right: 10px;
+					}
+				}
+
+				.description {
+					font-size: 12px;
+					line-height: 20px;
+					word-break: break-all;
+				}
+			}
+		}
+
+		.item:hover {
+			cursor: pointer;
+			background-color: @selectionBackground;
+		}
+	}
+}

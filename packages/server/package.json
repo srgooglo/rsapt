@@ -1,0 +1,16 @@
+{
+  "name": "rsapt/server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon --ignore dist/ --exec corenode-node ./src/index.js"
+  },
+  "dependencies": {
+    "linebridge": "^0.10.14"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "nodemon": "^2.0.15"
+  }
+}
