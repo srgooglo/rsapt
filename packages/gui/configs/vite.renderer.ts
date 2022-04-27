@@ -38,5 +38,4 @@ config.resolve.alias = {
 }
 
 // https://vitejs.dev/config/
-console.log(config)
 export default defineConfig(config)
