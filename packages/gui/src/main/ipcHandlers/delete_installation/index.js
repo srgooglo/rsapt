@@ -1,14 +1,14 @@
 import fs from "fs"
 import path from "path"
 
-export default async (event, version) => {
-    const installationPath = path.resolve(InstallationsPath, version)
+export default async (event, id) => {
+    const installationPath = path.resolve(global.InstallationsPath, id)
 
     if (fs.existsSync(installationPath)) {
         fs.rmdirSync(installationPath, { recursive: true })
     }
 
-    global.LocalManifestDB.delete(version)
+    global.LocalManifestDB.delete(id)
 
     return true
 }
