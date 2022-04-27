@@ -7,5 +7,8 @@ export default async (event, id) => {
     const existsInstallationPath = fs.existsSync(installationPath)
     const existsManifestDB = global.LocalManifestDB.has(id)
 
-    return Boolean(existsInstallationPath || existsManifestDB)
+    return {
+        manifest: existsManifestDB ? global.LocalManifestDB.get(id) : null,
+        existFiles: existsInstallationPath,
+    }
 }
