@@ -1,185 +1,88 @@
-import makeDir from "make-dir"
-import fss from "fs"
+import { BrowserWindow } from "electron"
+import fs from "fs"
 import pMap from "p-map"
-import path from "path"
 
+import electrondl from "electron-dl"
 import adapter from "axios/lib/adapters/http"
 import axios from "axios/lib/axios"
 import https from "https"
 
-import computeFileHash from "./computeFileHash"
+export async function downloadArray({ array, threads = 4, onDownloadOnce, onFail, onProgress }) {
+    return new Promise(async (resolve, reject) => {
+        let downloaded = 0
 
-const fs = fss.promises
-
-export const downloadInstanceFiles = async (
-    arr,
-    updatePercentage,
-    threads = 4
-) => {
-    let downloaded = 0
-
-    await pMap(
-        arr,
-        async (item) => {
-            let counter = 0
-            let res = false
-
-            if (!item.path || !item.url) {
-                console.warn("Skipping", item)
-                return
-            }
-
-            do {
-                counter += 1
-
-                if (counter !== 1) {
-                    await new Promise((resolve) => setTimeout(resolve, 5000))
+        await pMap(
+            array,
+            async (item) => {
+                if (!item.path || !item.url) {
+                    console.warn("Missing params (path or url), skipping download instance", item)
+                    return
                 }
 
                 try {
-                    res = await downloadFileInstance(
-                        item.path,
-                        item.url,
-                        item.sha1,
-                        item.legacyPath
-                    )
-                } catch {
-                    // Do nothing
+                    await new Promise((res, rej) => {
+                        downloadFile({
+                            destination: item.path,
+                            url: item.url,
+                            overwrite: true,
+                            onProgress: (prog) => {
+                                if (typeof onProgress === "function") {
+                                    onProgress({
+                                        item,
+                                        ...prog
+                                    })
+                                }
+                            },
+                            onCompleted: () => {
+                                downloaded++
+
+                                if (typeof onDownloadOnce === "function") {
+                                    onDownloadOnce({
+                                        downloadCount: downloaded,
+                                        item,
+                                    })
+                                }
+
+                                console.log(`[DOWNLOADER] Downloaded ${downloaded} of ${array.length}`)
+                                return res()
+                            }
+                        })
+                    })
+                } catch (error) {
+                    console.error("Failed to download", item, error)
+
+                    if (typeof onFail === "function") {
+                        onFail({
+                            downloadCount: downloaded,
+                            item,
+                            error,
+                        })
+                    }
                 }
+            },
+            { concurrency: threads }
+        )
 
-            } while (!res && counter < 3)
-
-            downloaded += 1
-
-            if (
-                updatePercentage &&
-                (downloaded % 5 === 0 || downloaded === arr.length)
-            ) {
-                updatePercentage(downloaded)
-            }
-        },
-        { concurrency: threads }
-    )
+        if (downloaded === array.length) {
+            console.log("All downloads finished")
+            return resolve()
+        }
+    })
 }
 
-const downloadFileInstance = async (fileName, url, sha1, legacyPath) => {
-    try {
-        const filePath = path.dirname(fileName)
-
-        try {
-            await fs.access(fileName)
-
-            if (legacyPath) {
-                await fs.access(legacyPath)
-            }
-
-            const checksum = await computeFileHash(fileName)
-            const legacyChecksum = legacyPath && (await computeFileHash(legacyPath))
-
-            if (checksum === sha1 && (!legacyPath || legacyChecksum === sha1)) {
-                return true
-            }
-        } catch {
-            await makeDir(filePath)
-
-            if (legacyPath) {
-                await makeDir(path.dirname(legacyPath))
-            }
-        }
-
-        const { data } = await axios({
-            url,
-            method: "GET",
-            adapter,
-            responseType: "stream",
-            responseEncoding: null,
-            timeout: 60000 * 20
-        })
-
-        const wStream = fss.createWriteStream(fileName, {
-            encoding: null
-        })
-
-        data.pipe(wStream)
-
-        let wStreamLegacy
-
-        if (legacyPath) {
-            wStreamLegacy = fss.createWriteStream(legacyPath, {
-                encoding: null
-            })
-
-            data.pipe(wStreamLegacy)
-        }
-
-        await new Promise((resolve, reject) => {
-            data.on("error", err => {
-                console.error(err)
-                reject(err)
-            })
-
-            data.on("end", () => {
-                wStream.end()
-
-                if (legacyPath) {
-                    wStreamLegacy.end()
-                }
-
-                resolve()
-            })
-        })
-
-        return true
-    } catch (e) {
-        console.error(`Error while downloading <${url}> to <${fileName}> --> ${e.message}`)
-
-        return false
-    }
-}
-
-export const downloadFile = async (fileName, url, onProgress) => {
-    await makeDir(path.dirname(fileName))
-
-    const { data, headers } = await axios.get(url, {
-        responseType: "stream",
-        responseEncoding: null,
-        adapter,
-        timeout: 60000 * 20
+export const downloadFile = async ({ destination, url, onProgress, onCompleted }) => {
+    const result = await electrondl.download(global.lastFocusedWindow, url, {
+        directory: destination,
+        onProgress,
+        onCompleted,
     })
 
-    const out = fss.createWriteStream(fileName, { encoding: null })
-
-    data.pipe(out);
-
-    // Save variable to know progress
-    let receivedBytes = 0
-    const totalBytes = parseInt(headers["content-length"], 10)
-
-    data.on("data", chunk => {
-        // Update the received bytes
-        receivedBytes += chunk.length
-
-        if (onProgress) {
-            onProgress(parseInt(((receivedBytes * 100) / totalBytes).toFixed(1), 10))
-        }
-    })
-
-    return new Promise((resolve, reject) => {
-        data.on("end", () => {
-            out.end()
-
-            resolve()
-        })
-
-        data.on("error", () => {
-            reject()
-        })
-    })
+    return result
 }
 
 export function _legacy_downloadHTTPSStream(url, destination) {
     return new Promise((resolve, reject) => {
-        const file = fss.createWriteStream(destination)
+        const file = fs.createWriteStream(destination)
 
         const request = https.get(url, (response) => {
             // check if response is success
@@ -196,6 +99,7 @@ export function _legacy_downloadHTTPSStream(url, destination) {
         }))
 
         request.on("error", (err) => {
+            console.error(err)
             fss.unlinkSync(destination)
             return reject(err.message)
         })
@@ -205,4 +109,39 @@ export function _legacy_downloadHTTPSStream(url, destination) {
             return reject(err.message)
         })
     })
+}
+
+export async function _legacy_downloadFile(url, destination) {
+    return new Promise(async (resolve, reject) => {
+        console.log(destination)
+        const file = fss.createWriteStream(destination)
+
+        const { data } = await axios({
+            url,
+            method: "GET",
+            adapter,
+            responseType: "stream",
+            responseEncoding: null,
+            timeout: 60000 * 20
+        }).catch((err) => {
+            console.error(err)
+
+            return reject(err.message)
+        })
+
+        data.pipe(file)
+
+        // close() is async, call cb after close completes
+        file.on("finish", () => file.close(() => {
+            return resolve(destination)
+        }))
+
+        file.on("error", (err) => {
+            console.error(err)
+
+            fss.unlinkSync(destination)
+            return reject(err.message)
+        })
+    })
+
 }
