@@ -1,4 +1,4 @@
-global.XMLHttpRequest = require('xhr2')
+global.XMLHttpRequest = require("xhr2")
 
 import { ipcMain, app, BrowserWindow } from "electron"
 import electronStore from "electron-store"
@@ -6,7 +6,10 @@ import os from "os"
 import fs from "fs"
 import { join, resolve } from "path"
 
+import setupDependencies from "./lib/setupDependencies"
 import ipcHandlers from "./ipcHandlers"
+
+const isDev = require("electron-is-dev")
 
 // private variables
 const LocalManifestDB = global.LocalManifestDB = new electronStore({
@@ -18,29 +21,38 @@ const SettingsDB = global.SettingsDB = new electronStore({
   name: "settings",
   cwd: app.getPath("userData"),
   defaults: {
-    RepoServer: "https://repo.ragestudio.net",
+    RepoServer: isDev ? "http://localhost:3010" : "https://repo.ragestudio.net",
     MainPath: resolve(os.homedir(), "rsapt"),
-    DownloadThreads: 4
+    DownloadThreads: 4,
+    appPath: app.getPath("userData"),
   },
 })
 
-const CachePath = global.CachePath = resolve(SettingsDB.get("MainPath"), "cache")
-const InstallationsPath = global.InstallationsPath = resolve(SettingsDB.get("MainPath"), "installations")
-const BIN7z = global.BIN7z = resolve(SettingsDB.get("MainPath"), "binaries/7zbin")
+global.CachePath = resolve(SettingsDB.get("MainPath"), "cache")
+global.InstallationsPath = resolve(SettingsDB.get("MainPath"), "installations")
 
-let _7zBinExecutable = global._7zBinExecutable = "7za.exe" // By default set for win32
-let _7zScopedDist = global._7zScopedDist = `${process.platform}/${process.arch}`
+global.BIN7z = (() => {
+  global._7zBinExecutable = "7za.exe" // By default set for win32
+  global._7zScopedDist = `${process.platform}/${process.arch}`
 
-switch (process.platform) {
-  case "linux":
-    _7zBinExecutable = `7za`
-    break
-  case "darwin":
-    _7zBinExecutable = `7za`
-    _7zScopedDist = `${process.platform}`
-    break
-  default:
-    break
+  switch (process.platform) {
+    case "linux":
+      global._7zBinExecutable = `7za`
+      break
+    case "darwin":
+      global._7zBinExecutable = `7za`
+      global._7zScopedDist = `${process.platform}`
+      break
+    default:
+      break
+  }
+
+  return resolve(SettingsDB.get("MainPath"), "binaries/7zbin", _7zBinExecutable)
+})()
+
+// preload tasks
+if (!fs.existsSync(BIN7z)) {
+  setupDependencies()
 }
 
 if (fs.existsSync(global.CachePath)) {
@@ -55,10 +67,12 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0)
 }
 
-let win = null
+global.mainWin = null
+global.lastFocusedWindow = null
 
-async function mainWin() {
-  win = new BrowserWindow({
+async function initializeMainWin() {
+  mainWin = new BrowserWindow({
+    nodeIntegration: true,
     title: "RepoManager",
     webPreferences: {
       preload: join(__dirname, "../preload/index.cjs")
@@ -78,35 +92,43 @@ async function mainWin() {
   })
 
   if (app.isPackaged) {
-    win.loadFile(join(__dirname, "../renderer/index.html"))
+    mainWin.loadFile(join(__dirname, "../renderer/index.html"))
   } else {
     const pkg = await import("../../package.json")
     const url = `http://${pkg.env.HOST || "127.0.0.1"}:${pkg.env.PORT}`
 
-    win.loadURL(url)
+    mainWin.loadURL(url)
+
+    // open dev tools
+    mainWin.webContents.openDevTools()
   }
 
   // Test active push message to Renderer-process.
-  win.webContents.on("did-finish-load", () => {
-    win?.webContents.send("main-process-message", (new Date).toLocaleString())
+  mainWin.webContents.on("did-finish-load", () => {
+    mainWin?.webContents.send("main-process-message", (new Date).toLocaleString())
   })
 }
 
-app.whenReady().then(mainWin)
+app.whenReady().then(initializeMainWin)
 
 app.on("window-all-closed", () => {
-  win = null
+  mainWin = null
+  
   if (process.platform !== "darwin") {
     app.quit()
   }
 })
 
 app.on("second-instance", () => {
-  if (win) {
+  if (mainWin) {
     // Someone tried to run a second instance, we should focus our window.
-    if (win.isMinimized()) win.restore()
-    win.focus()
+    if (mainWin.isMinimized()) mainWin.restore()
+    mainWin.focus()
   }
+})
+
+app.on("browser-window-focus", () => {
+  lastFocusedWindow = BrowserWindow.getFocusedWindow()
 })
 
 ipcMain.handle("close-app", () => {
