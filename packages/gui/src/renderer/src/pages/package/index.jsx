@@ -10,7 +10,6 @@ import {
 } from "react-router-dom"
 
 import {
-    getPackageVersionManifest,
     getPackageData,
 } from "lib"
 
@@ -19,8 +18,16 @@ export default () => {
     let navigate = useNavigate()
 
     const [data, setData] = React.useState(null)
+    const [isInstalled, setIsInstalled] = React.useState(false)
     const [selectedKeyVersion, setSelectedKeyVersion] = React.useState("latest")
     const [versionManifest, setVersionManifest] = React.useState(null)
+
+    const checkIsInstalled = async () => {
+        let isInstalled = await window.app.checkInstallation(params.id)
+        setIsInstalled(isInstalled)
+
+        return isInstalled
+    }
 
     const loadPackageData = async () => {
         const packageData = await getPackageData(params.id).catch(error => {
@@ -37,18 +44,23 @@ export default () => {
     }
 
     const onSelectVersion = async (version) => {
-        // fetch manifest data
-        const result = await getPackageVersionManifest(params.id, version).catch(error => {
-            console.error(error)
-            antd.message.error("Failed to load package version manifest")
+        if (!data) {
+            console.error("No package data")
+            antd.message.error("Failed to load package manifest")
+            return false
+        }
+
+        const versionManifest = data.manifests.find(manifest => manifest.version === version)
+
+        if (!versionManifest) {
+            console.error("No version manifest available")
+            antd.message.error("Version not matched")
 
             return false
-        })
-
-        if (result) {
-            setSelectedKeyVersion(version)
-            setVersionManifest(result)
         }
+
+        setSelectedKeyVersion(version)
+        setVersionManifest(versionManifest)
     }
 
     const onClickInstall = async () => {
@@ -58,13 +70,32 @@ export default () => {
             return false
         }
 
-        await window.app.makeInstallation(versionManifest).catch((error) => {
+        await window.app.makeInstallation(data.id, selectedKeyVersion).catch((error) => {
             antd.message.error(`Failed to install package [${error}]`)
+        })
+
+        await checkIsInstalled()
+    }
+
+    const onClickUninstall = async () => {
+        await window.app.uninstallPackage(params.id).catch((error) => {
+            antd.message.error(`Failed to uninstall package [${error.message}]`)
+        })
+
+        await checkIsInstalled()
+    }
+
+    const onClickOpenDir = async () => {
+        console.log(params.id)
+
+        await window.app.openInstallationDir(params.id).catch((error) => {
+            antd.message.error(`Failed to open installation directory [${error.message}]`)
         })
     }
 
     React.useEffect(() => {
         loadPackageData()
+        checkIsInstalled()
     }, [])
 
     if (!data) {
@@ -103,18 +134,33 @@ export default () => {
                 }
             </antd.Select>
         </div>
-        <div>
-            {JSON.stringify(versionManifest)}
-        </div>
-        <div>
-            <antd.Button
-                type="primary"
-                icon={<Icons.DownloadCloud />}
-                onClick={onClickInstall}
-                disabled={!versionManifest}
-            >
-                Install
-            </antd.Button>
+        <div className="actions">
+            {isInstalled ? <div>
+                <antd.Button
+                    type="danger"
+                    icon={<Icons.X />}
+                    onClick={onClickUninstall}
+                >
+                    Uninstall
+                </antd.Button>
+            </div> : <div>
+                <antd.Button
+                    type="primary"
+                    icon={<Icons.DownloadCloud />}
+                    onClick={onClickInstall}
+                    disabled={!versionManifest}
+                >
+                    Install
+                </antd.Button>
+            </div>}
+            {isInstalled && <div>
+                <antd.Button
+                    icon={<Icons.Folder />}
+                    onClick={onClickOpenDir}
+                >
+                    Open directory
+                </antd.Button>
+            </div>}
         </div>
     </div>
 }
