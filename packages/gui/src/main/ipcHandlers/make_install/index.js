@@ -10,24 +10,12 @@ import SetupInstallerDependencies from "../../lib/setupDependencies"
 import { getPackageManifest, getEntrypointScript } from "../../lib/packages"
 import { downloadFile } from "../../lib/downloader"
 import unpackage from "../../lib/unpackage"
-
-function requireFromString(src, filename = "") {
-    var Module = module.constructor
-    var m = new Module()
-
-    m._compile(src, filename)
-
-    return m.exports
-}
-
-const defaultResolver = {
-    homedir: os.homedir(),
-}
+import requireFromString from "../../lib/requireFromString"
 
 export default async (event, packageManifest, version, params = {}) => {
     // set paths resolver
     let resolver = {
-        ...defaultResolver,
+        ...global.defaultResolver,
     }
 
     let installationContext = {

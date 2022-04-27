@@ -67,6 +67,9 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0)
 }
 
+global.defaultResolver = {
+  homedir: os.homedir(),
+}
 global.mainWin = null
 global.lastFocusedWindow = null
 
@@ -113,7 +116,7 @@ app.whenReady().then(initializeMainWin)
 
 app.on("window-all-closed", () => {
   mainWin = null
-  
+
   if (process.platform !== "darwin") {
     app.quit()
   }
