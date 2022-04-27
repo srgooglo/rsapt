@@ -18,6 +18,12 @@ import "antd/dist/antd.dark.less"
 import "./index.less"
 
 class App extends React.Component {
+  static async initialize() {
+    // get settings from bridge
+    const config = await window.bridge.ipcRenderer.invoke("get_local_config")
+    window.app.config = Object.freeze(config)
+  }
+
   onClickCloseApp = () => {
     window.bridge.closeApp()
   }
@@ -53,7 +59,7 @@ class App extends React.Component {
       <footer>
         <div>
           <span>
-            <Icons.Server /> {window.bridge.originURI}
+            <Icons.Server /> {window.app.config.RepoServer}
           </span>
         </div>
         <div>
