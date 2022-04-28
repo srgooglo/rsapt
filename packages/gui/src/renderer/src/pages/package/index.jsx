@@ -2,6 +2,8 @@ import React from "react"
 import * as antd from "antd"
 import * as Icons from "feather-reactjs"
 
+import { InstallationPrompt } from "components"
+
 import "./index.less"
 
 import {
@@ -19,14 +21,26 @@ export default () => {
 
     const [data, setData] = React.useState(null)
     const [isInstalled, setIsInstalled] = React.useState(false)
-    const [selectedKeyVersion, setSelectedKeyVersion] = React.useState("latest")
-    const [versionManifest, setVersionManifest] = React.useState(null)
+    const [installationDetails, setInstallationDetails] = React.useState(null)
+    const [isInstalling, setIsInstalling] = React.useState(false)
 
     const checkIsInstalled = async () => {
         let isInstalled = await window.app.checkInstallation(params.id)
-        setIsInstalled(isInstalled)
+
+        setIsInstalled(isInstalled.existFiles)
+        setInstallationDetails(isInstalled)
 
         return isInstalled
+    }
+
+    const checkIsInstalling = async () => {
+        let isInstalling = await window.bridge.ipcRenderer.invoke("tasks.has", `packageInstallation.${params.id}`)
+
+        console.log(isInstalling)
+
+        setIsInstalling(isInstalling)
+
+        return isInstalling
     }
 
     const loadPackageData = async () => {
@@ -43,38 +57,24 @@ export default () => {
         }
     }
 
-    const onSelectVersion = async (version) => {
-        if (!data) {
-            console.error("No package data")
-            antd.message.error("Failed to load package manifest")
-            return false
-        }
-
-        const versionManifest = data.manifests.find(manifest => manifest.version === version)
-
-        if (!versionManifest) {
-            console.error("No version manifest available")
-            antd.message.error("Version not matched")
-
-            return false
-        }
-
-        setSelectedKeyVersion(version)
-        setVersionManifest(versionManifest)
-    }
-
     const onClickInstall = async () => {
-        if (!versionManifest) {
-            console.error(`Cannot make installation, no version manifest available`)
-            antd.message.error(`Failed to install package [no version manifest available]`)
-            return false
-        }
-
-        await window.app.makeInstallation(data.id, selectedKeyVersion).catch((error) => {
-            antd.message.error(`Failed to install package [${error}]`)
+        window.app.DrawerController.open("InstallationPrompt", InstallationPrompt, {
+            props: {
+                closeIcon: false,
+                closable: false,
+                maskClosable: false,
+                headerStyle: {
+                    display: "none",
+                    height: 0,
+                },
+                bodyStyle: {
+                    padding: "15px 30px",
+                },
+            },
+            componentProps: {
+                package: data,
+            },
         })
-
-        await checkIsInstalled()
     }
 
     const onClickUninstall = async () => {
@@ -86,21 +86,46 @@ export default () => {
     }
 
     const onClickOpenDir = async () => {
-        console.log(params.id)
-
         await window.app.openInstallationDir(params.id).catch((error) => {
             antd.message.error(`Failed to open installation directory [${error.message}]`)
         })
     }
 
+    const onInstallationStart = async () => {
+        setIsInstalling(true)
+    }
+
+    const onInstallationFinished = async () => {
+        setIsInstalling(false)
+        await checkIsInstalled()
+    }
+
+    const onInstallationError = async () => {
+        setIsInstalling(false)
+        await checkIsInstalled()
+    }
+
     React.useEffect(() => {
         loadPackageData()
         checkIsInstalled()
+        checkIsInstalling()
+
+        window.app.eventBus.on(`installation.started.${params.id}`, onInstallationStart)
+        window.app.eventBus.on(`installation.finished.${params.id}`, onInstallationFinished)
+        window.app.eventBus.on(`installation.error.${params.id}`, onInstallationError)
+
+        return () => {
+            window.app.eventBus.off(`installation.started.${params.id}`, onInstallationStart)
+            window.app.eventBus.off(`installation.finished.${params.id}`, onInstallationFinished)
+            window.app.eventBus.on(`installation.error.${params.id}`, onInstallationError)
+        }
     }, [])
 
     if (!data) {
         return <antd.Skeleton active />
     }
+
+    console.log(installationDetails)
 
     return <div className="package">
         <div className="header">
@@ -116,41 +141,27 @@ export default () => {
             </div>
         </div>
 
-        <div>
-            <h3><Icons.Tag />Select version</h3>
-            <antd.Select
-                onChange={(value) => onSelectVersion(value)}
-                value={selectedKeyVersion}
-            >
-                {
-                    data.versions.map(version => {
-                        return <antd.Select.Option
-                            key={version}
-                            value={version}
-                        >
-                            {version}
-                        </antd.Select.Option>
-                    })
-                }
-            </antd.Select>
-        </div>
         <div className="actions">
-            {isInstalled ? <div>
+            <div>
+                <antd.Button
+                    type="primary"
+                    icon={<Icons.DownloadCloud />}
+                    onClick={onClickInstall}
+                    disable={isInstalling}
+                    loading={isInstalling}
+                >
+                    {
+                        isInstalling ? "Installing..." : "Install version"
+                    }
+                </antd.Button>
+            </div>
+            {isInstalled && <div>
                 <antd.Button
                     type="danger"
                     icon={<Icons.X />}
                     onClick={onClickUninstall}
                 >
                     Uninstall
-                </antd.Button>
-            </div> : <div>
-                <antd.Button
-                    type="primary"
-                    icon={<Icons.DownloadCloud />}
-                    onClick={onClickInstall}
-                    disabled={!versionManifest}
-                >
-                    Install
                 </antd.Button>
             </div>}
             {isInstalled && <div>
@@ -161,6 +172,38 @@ export default () => {
                     Open directory
                 </antd.Button>
             </div>}
+        </div>
+        <div className="details">
+            {
+                installationDetails?.manifest?.package?.version && <div>
+                    <Icons.Tag /> Installed version
+                    <div>
+                        <antd.Tag>
+                            {installationDetails.manifest.package.version}
+                        </antd.Tag>
+                    </div>
+                </div>
+            }
+            {
+                installationDetails?.manifest?.platform && <div>
+                    <Icons.Disc /> Installed platform
+                    <div>
+                        <antd.Tag>
+                            {installationDetails.manifest.platform}
+                        </antd.Tag>
+                    </div>
+                </div>
+            }
+            {
+                installationDetails?.manifest?.paths?.mainInstallationPath && <div>
+                    <Icons.Folder /> Directory
+                    <div>
+                        <antd.Tag>
+                            {installationDetails?.manifest?.paths?.mainInstallationPath}
+                        </antd.Tag>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 }
