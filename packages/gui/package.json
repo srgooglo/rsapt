@@ -7,7 +7,9 @@
   "main": "dist/main/index.cjs",
   "scripts": {
     "dev": "node scripts/watch.mjs",
-    "build": "node scripts/build.mjs && electron-builder"
+    "build": "yarn build:*",
+    "build:vite": "node scripts/build.mjs",
+    "build:electron": "electron-builder"
   },
   "engines": {
     "node": ">=15.0.0"
