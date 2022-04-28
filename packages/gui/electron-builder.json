@@ -1,5 +1,5 @@
 {
-  "appId": "memesis.launcher",
+  "appId": "ragestudio.apt",
   "asar": true,
   "directories": {
     "output": "release/${version}"
