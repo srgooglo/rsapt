@@ -1,4 +1,5 @@
 global.XMLHttpRequest = require("xhr2")
+const isDev = require("electron-is-dev")
 
 import { ipcMain, app, BrowserWindow } from "electron"
 import electronStore from "electron-store"
@@ -9,7 +10,50 @@ import { join, resolve } from "path"
 import setupDependencies from "./lib/setupDependencies"
 import ipcHandlers from "./ipcHandlers"
 
-const isDev = require("electron-is-dev")
+class TasksController {
+  constructor() {
+    this.tasks = []
+  }
+
+  add(id, task) {
+    if (this.tasks.find(t => t.id === id)) {
+      console.warn(`Task with id ${id} already exists`)
+      return false
+    }
+
+    this.tasks.push({
+      id,
+      task,
+    })
+
+    if (typeof win.webContents.send === "function") {
+      win.webContents.send("tasks.new", id)
+    }
+  }
+
+  finish(id) {
+    const task = this.tasks.find(t => t.id === id)
+
+    if (!task) {
+      console.warn(`Task with id ${id} not found`)
+
+      return false
+    } else {
+      this.tasks = this.tasks.filter(t => t.id !== id)
+
+      if (typeof win.webContents.send === "function") {
+        win.webContents.send("tasks.finished", id)
+      }
+    }
+  }
+
+  // async run(id) {
+  //   for (let task of this.tasks) {
+  //     await task()
+  //   }
+  // }
+}
+
 
 // private variables
 const LocalManifestDB = global.LocalManifestDB = new electronStore({
@@ -27,6 +71,8 @@ const SettingsDB = global.SettingsDB = new electronStore({
     appPath: app.getPath("userData"),
   },
 })
+
+global.Tasks = new TasksController()
 
 global.CachePath = resolve(SettingsDB.get("MainPath"), "cache")
 global.InstallationsPath = resolve(SettingsDB.get("MainPath"), "installations")
@@ -138,14 +184,36 @@ ipcMain.handle("close-app", () => {
   app.quit()
 })
 
+// task manager
+ipcMain.handle("tasks.get", (event, key) => {
+  if (key) {
+    return Tasks.tasks.find(t => t.id === key)
+  }
+
+  return Tasks.tasks
+})
+
+ipcMain.handle("tasks.has", (event, id) => {
+  return Tasks.tasks.includes(id)
+})
+
+// handle all ipc handlers
 Object.keys(ipcHandlers).forEach(key => {
   if (typeof ipcHandlers[key] === "function") {
     ipcMain.handle(key, async (event, ...args) => {
+      let error = null
+      let result = null
+
       try {
-        return await ipcHandlers[key](event, ...args)
-      } catch (err) {
-        console.error(err)
-        return err
+        result = await ipcHandlers[key](event, ...args)
+      }
+      catch (err) {
+        error = err
+      }
+
+      return {
+        error,
+        result,
       }
     })
   }
