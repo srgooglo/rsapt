@@ -13,9 +13,13 @@ export default class PackageController extends ComplexController {
             for await (const pkg of packagesDirs) {
                 const packageManifest = await this.methods.getPackage({
                     id: pkg,
+                }).catch(() => {
+                    return false
                 })
 
-                packages.push(packageManifest)
+                if (packageManifest) {
+                    packages.push(packageManifest)
+                }
             }
 
             return packages
@@ -41,8 +45,57 @@ export default class PackageController extends ComplexController {
 
             // read all versions available (filter, only dirs)
             packageManifest.versions = fs.readdirSync(packagePath).filter(version => fs.statSync(path.join(packagePath, version)).isDirectory())
+            packageManifest.manifests = packageManifest.versions.map((version) => {
+                try {
+                    let versionManifest = JSON.parse(fs.readFileSync(path.join(packagePath, version, "manifest"), "utf8"))
+
+                    // process bundle uri resolver
+                    if (Array.isArray(versionManifest.bundles)) {
+                        versionManifest.bundles = versionManifest.bundles.map(bundle => {
+                            return {
+                                ...bundle,
+                                downloadUrl: `${global.publicHost}/bundle/${params.id}@${version}/${bundle.id}`,
+                            }
+                        })
+                    }
+
+                    // resolve entrypoint script url
+
+                    return {
+                        version,
+                        ...versionManifest,
+                    }
+                }
+                catch {
+                    return null
+                }
+
+            }).filter(manifest => manifest)
 
             return packageManifest
+        },
+        getEntrypointScript: async (params = {}) => {
+            if (!params.id) {
+                throw new Error("Missing package ID")
+            }
+
+            if (params.id.includes("@")) {
+                const [id, version] = params.id.split("@")
+                params.id = id
+                params.version = version
+            }
+
+            if (!params.version) {
+                params.version = "latest"
+            }
+
+            const entrypoint = path.join(global.repoPackagesDir, params.id, params.version, "entrypoint")
+
+            if (!fs.existsSync(entrypoint) || !fs.statSync(entrypoint).isFile()) {
+                throw new Error(`Entrypoint not found for package: [${params?.id}] with version [${params?.version}]`)
+            }
+
+            return fs.readFileSync(entrypoint, "utf8")
         }
     }
 
@@ -60,6 +113,17 @@ export default class PackageController extends ComplexController {
         },
         "/package/:id": async (req, res) => {
             await this.methods.getPackage(req.params)
+                .then((data) => {
+                    return res.json(data)
+                })
+                .catch((err) => {
+                    return res.status(400).json({
+                        message: err.message
+                    })
+                })
+        },
+        "/package/:id/entrypoint": async (req, res) => {
+            await this.methods.getEntrypointScript(req.params)
                 .then((data) => {
                     return res.json(data)
                 })
