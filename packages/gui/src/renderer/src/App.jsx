@@ -1,5 +1,7 @@
+import { IPCInvoke } from "./lib"
+window.IPCInvoke = IPCInvoke
+
 import React from "react"
-import * as antd from "antd"
 import {
   BrowserRouter,
   Routes,
@@ -10,9 +12,12 @@ import {
 import { CreateEviteApp } from "evite"
 import * as Icons from "feather-reactjs"
 
+import { Drawer } from "./layout"
+
 import InstallerPage from "./pages"
 import PackagePage from "./pages/package"
 import LibraryPage from "./pages/library"
+import SettingsPage from "./pages/settings"
 
 import "antd/dist/antd.dark.less"
 import "./index.less"
@@ -20,7 +25,7 @@ import "./index.less"
 class App extends React.Component {
   static async initialize() {
     // get settings from bridge
-    const config = await window.bridge.ipcRenderer.invoke("get_local_config")
+    const config = await IPCInvoke("get_local_config")
     window.app.config = Object.freeze(config)
   }
 
@@ -54,6 +59,7 @@ class App extends React.Component {
           <Route path="/" element={<InstallerPage />} />
           <Route path="/package/:id" element={<PackagePage />} />
           <Route path="/library" element={<LibraryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </div>
       <footer>
@@ -75,6 +81,7 @@ class App extends React.Component {
           </Link>
         </div>
       </footer>
+      <Drawer />
     </BrowserRouter>
   }
 }
