@@ -15,8 +15,6 @@ export default (props) => {
     let location = useLocation()
 
     const [packages, setPackages] = React.useState([])
-    const [selectedPackage, setSelectedPackage] = React.useState(null)
-    const [selectedKeyVersion, setSelectedKeyVersion] = React.useState("latest")
 
     const loadGlobalPackages = async () => {
         const availablePackages = await getPackages()
@@ -25,7 +23,8 @@ export default (props) => {
     }
 
     const onRefresh = async () => {
-        await this.loadGlobalPackages()
+        setPackages([])
+        await loadGlobalPackages()
     }
 
     const onSearch = async () => {
@@ -89,6 +88,7 @@ export default (props) => {
                 <antd.Input.Search
                     placeholder="Search for a package"
                     onSearch={onSearch}
+                    disabled
                 />
             </div>
         </div>
