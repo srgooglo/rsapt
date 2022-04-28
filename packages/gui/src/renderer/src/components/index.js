@@ -1,0 +1,1 @@
+export { default as InstallationPrompt } from "./InstallationPrompt"
