@@ -1,11 +1,19 @@
 import axios from "axios"
-const http = window.bridge.http
-const https = window.bridge.https
-const path = window.bridge.path
-const fs = window.bridge.fs
 
 export function sleep(duration) {
     return new Promise((resolve) => setTimeout(resolve, duration))
+}
+
+export function IPCInvoke(...args) {
+    return new Promise(async (resolve, reject) => {
+        const response = await window.bridge.ipcRenderer.invoke(...args)
+
+        if (response.error) {
+            return reject(response.error)
+        }
+
+        return resolve(response.result)
+    })
 }
 
 export function getPackages() {
