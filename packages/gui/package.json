@@ -7,7 +7,7 @@
   "main": "dist/main/index.cjs",
   "scripts": {
     "dev": "node scripts/watch.mjs",
-    "build": "yarn build:*",
+    "build": "yarn build:vite && yarn build:electron",
     "build:vite": "node scripts/build.mjs",
     "build:electron": "electron-builder"
   },
