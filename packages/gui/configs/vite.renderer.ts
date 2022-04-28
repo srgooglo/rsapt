@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react"
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
+import { builtinModules } from "module"
 
 import path from "path"
 import { defineConfig } from "vite"
@@ -21,6 +22,16 @@ config.base = "./"
 config.build = {
   emptyOutDir: true,
   outDir: "../../dist/renderer",
+  minify: process.env.NODE_ENV === 'production',
+  rollupOptions: {
+    external: [
+      ...builtinModules,
+      'electron',
+    ],
+    output: {
+      entryFileNames: '[name].cjs',
+    },
+  },
 }
 
 config.resolve.alias = {
