@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react"
-import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
+import { viteCommonjs } from "@originjs/vite-plugin-commonjs"
 import { builtinModules } from "module"
 
 import path from "path"
