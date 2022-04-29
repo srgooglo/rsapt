@@ -71,7 +71,7 @@ export default async (event, packageManifest, version, params = {}) => {
             await fs.rmdirSync(path.resolve(global.InstallationsPath, packageManifest.id), { recursive: true })
         }
 
-        // create the installation directory
+        // setup installer dependencies
         await SetupInstallerDependencies().catch(err => {
             console.error(err)
             return reject("Cannot install dependencies")
