@@ -1,25 +1,25 @@
-import { join } from 'path'
-import { builtinModules } from 'module'
-import { defineConfig } from 'vite'
+import { join } from "path"
+import { builtinModules } from "module"
+import { defineConfig } from "vite"
 
 export default defineConfig({
   mode: process.env.NODE_ENV,
-  root: join(__dirname, '../src/main'),
+  root: join(__dirname, "../src/main"),
   build: {
-    outDir: '../../dist/main',
+    outDir: "../../dist/main",
     lib: {
-      entry: 'index.js',
-      formats: ['cjs'],
+      entry: "index.js",
+      formats: ["cjs"],
     },
-    minify: process.env.NODE_ENV === 'production',
+    minify: process.env.NODE_ENV === "production",
     emptyOutDir: true,
     rollupOptions: {
       external: [
         ...builtinModules,
-        'electron',
+        "electron",
       ],
       output: {
-        entryFileNames: '[name].cjs',
+        entryFileNames: "[name].cjs",
       },
     },
   },

@@ -22,14 +22,14 @@ config.base = "./"
 config.build = {
   emptyOutDir: true,
   outDir: "../../dist/renderer",
-  minify: process.env.NODE_ENV === 'production',
+  minify: process.env.NODE_ENV === "production",
   rollupOptions: {
     external: [
       ...builtinModules,
-      'electron',
+      "electron",
     ],
     output: {
-      entryFileNames: '[name].cjs',
+      entryFileNames: "[name].cjs",
     },
   },
 }
