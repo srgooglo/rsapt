@@ -14,7 +14,7 @@ import * as Icons from "feather-reactjs"
 
 import { Drawer } from "./layout"
 
-import InstallerPage from "./pages"
+import BrowserPage from "./pages/browser"
 import PackagePage from "./pages/package"
 import LibraryPage from "./pages/library"
 import SettingsPage from "./pages/settings"
@@ -56,7 +56,7 @@ class App extends React.Component {
       </header>
       <div className="App">
         <Routes>
-          <Route path="/" element={<InstallerPage />} />
+          <Route path="/" element={<BrowserPage />} />
           <Route path="/package/:id" element={<PackagePage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
