@@ -23,15 +23,15 @@ config.build = {
   emptyOutDir: true,
   outDir: "../../dist/renderer",
   minify: process.env.NODE_ENV === "production",
-  rollupOptions: {
-    external: [
-      ...builtinModules,
-      "electron",
-    ],
-    output: {
-      entryFileNames: "[name].cjs",
-    },
-  },
+  // rollupOptions: {
+  //   external: [
+  //     ...builtinModules,
+  //     "electron",
+  //   ],
+  //   output: {
+  //     entryFileNames: "[name].cjs",
+  //   },
+  // },
 }
 
 config.resolve.alias = {
